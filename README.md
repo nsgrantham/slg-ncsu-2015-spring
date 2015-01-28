@@ -18,7 +18,7 @@ If you would like to give a talk on an available data below, please email `slg@s
 |06|03/06/15|TBD|TBD|
 | |03/13/15|_Spring break_ ||
 |07|03/20/15|TBD|TBD|
-|08|03/27/15|TBD|TBD|
+|08|03/27/15|Reinforcement Learning and more|Shuping Ruan|
 | |04/03/15|_Spring holiday_ ||
 |09|04/10/15|TBD|TBD|
 |10|04/17/15|TBD|TBD|
