@@ -5,7 +5,10 @@ SLG is a reading group at North Carolina State University organized by [Dr. Just
 
 ## Schedule of talks
 
-If you would like to give a talk on an available data below, please email `slg@stat.ncsu.edu` with your name + proposed topic.
+If you would like to give a talk on an available date below, please either:
+
+- fork this repository, add yourself to the schedule, and submit a pull request, or
+- email `slg@stat.ncsu.edu` with your name + proposed topic + date preference.
 
 |Talk|Date|Topic|Presenter(s)|
 |----|----|-----|------------|
