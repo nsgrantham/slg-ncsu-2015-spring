@@ -1,0 +1,475 @@
+---
+title: "Web Scraping with R"
+subtitle: "SLG Presentation"
+author: "Marschall Furman"
+date: "Friday, January 30, 2015"
+output: ioslides_presentation
+---
+
+## Preview of Topics
+
+- options for scraping
+- Scraping in R 101 
+- basketball example
+
+## Source Code
+
+Webpages are written in html [code](http://www.google.com).   
+
+Our goal is to *extract* this html and *parse* through the source code to find pertinent information.
+
+## Web Scraping Options
+Python libraries
+
+ - BeautifulSoup
+ - lxml
+ - scrapy
+ - Selenium
+ 
+Ruby
+
+ - Nokogiri
+ - Hpricot
+  
+## R packages for scraping 
+
+ - RCurl
+ - scrapeR
+ - **XML**
+ - **stringr** 
+ - **rvest (Github)**
+
+## How do I even scrape?
+
+1. Look at the data!
+
+    - figure out which webpages you need to retrieve data from
+   
+2. record URLs from each page, determine any patterns
+
+    > **Ex:** library searches
+    - statistics: <span style="color:green">www.search.lib.ncsu.edu/?q=</span><span style="color:red">statistics</span>
+    - big data: <span style="color:green">www.search.lib.ncsu.edu/?q=<span style="color:red">big+data
+     
+3. Extract information from the HTML code.
+
+## Regular Expressions
+
+- Used for describing search patterns
+- Allow us to search through HTML if we don't know exactly what we are looking for
+
+Ex: Identify words starting with "c" :
+```{r}
+start.c <- "\\<c"
+grepl(start.c, c("cat","bat","computer"))
+```
+
+[Here](http://www.cheatography.com/davechild/cheat-sheets/regular-expressions/) is one of many cheat sheets you can find on the web to keep track of these. 
+
+## Common R functions
+Some common manipulations you can do in R include:
+
+- splitting strings by common delimiters
+```{r}
+strsplit("This is a string", split=" ")
+```
+- selecting partial strings
+```{r}
+substring("Example string",2,6)
+```
+
+## More R functions
+
+- combining objects into a string
+```{r}
+paste("string", 123, sep="")
+```
+
+Different packages will use their own versions of these functions depending on the format they prefer.
+
+## The Pipe Operator
+
+The %>% symbol is called a pipe, and it allows you to pass data from one function to the next rather than nesting functions.
+
+```{r}
+library(rvest)
+vec <- c(1,2,3)
+
+vec %>%  
+  sum
+vec %>% 
+  colnames
+```
+
+## XML Example
+
+We want to get pitchFX data from a particular baseball game. The [website](http://gd2.mlb.com/components/game/mlb/) containing the data is in an XML format.
+
+```{r,echo=T,message=F}
+library(XML)
+fileloc = "./pitchfx.txt"
+start.date = "2009-05-02" 
+end.date = start.date
+URL.base = "http://gd2.mlb.com/components/game/mlb/"
+game.type = "R"
+```
+
+```{r,echo=F,results='hide'}
+grab.pitch = c("des", "type", "x", "y",
+               "start_speed", "end_speed",
+               "sz_top", "sz_bot", "pfx_x", "pfx_z", "px", "pz",
+               "x0", "y0", "z0", "vx0", "vy0", "vz0", "ax", "ay", "az",
+               "break_y", "break_angle", "break_length", "pitch_type",
+               "type_confidence")
+grab.atbat = c("b", "s", "o", "batter", "pitcher", "b_height",
+               "stand", "p_throws", "event")
+
+# write initial variables on file
+meta <- c("Year", "Month", "Day", "Inning", "Home", "Away")
+write(c(meta, grab.atbat, grab.pitch), file = fileloc,
+      ncol = length(c(grab.atbat, grab.pitch)) + length(meta), sep = ">")
+
+# transfer date info
+start.date <- as.POSIXlt(start.date); end.date <- as.POSIXlt(end.date);
+diff.date <- as.numeric(difftime(end.date, start.date))
+date.range <- as.POSIXlt(seq(start.date, by = "days",
+                             length = 1 + diff.date))
+
+year <- date.range$year + 1900
+month <- date.range$mon + 1
+day <- date.range$mday
+URL.date <- paste(URL.base, "year_", year, "/",
+                  ifelse(month >= 10, "month_", "month_0"), month, "/",
+                  ifelse(day >= 10, "day_", "day_0"), day, "/", sep = "")
+
+HTML.day <- htmlParse(URL.date)
+parse.day <- xpathSApply(HTML.day, "//a[@*]", xmlGetAttr, "href")
+parse.day <- parse.day[grep("^gid_*", parse.day)][1]
+
+URL.game <- paste(URL.date, parse.day, sep = "")
+HTML.game <- htmlParse(URL.game)
+parse.game.exists <- xpathSApply(HTML.game, "//a[@*]", xmlGetAttr, "href")
+
+# if game.xml exists
+if (sum(match(parse.game.exists, "game.xml"), na.rm = T) > 0) {
+  
+  # grab game type (regular season, etc.) and gameday type (pitch f/x, etc.)
+  XML.game <- xmlInternalTreeParse(paste(URL.game, "game.xml", sep = ""))
+  parse.game <- sapply(c("type", "gameday_sw"), function (x)
+    xpathSApply(XML.game, "//game[@*]", xmlGetAttr, x))
+  
+  # if proper game type: "R" ~ regular season, "S" ~ spring, "D" ~ divison series
+  # "L" ~ league chamption series, "W" ~ world series
+  if (parse.game['type'] == game.type) {
+    # grab team names
+    parse.teams <- sapply(c("abbrev"), function (x)
+      xpathSApply(XML.game, "//team[@*]", xmlGetAttr, x))
+    home <- parse.teams[1]; away <- parse.teams[2]
+   
+    # if pitch f/x data exists
+    if (parse.game["gameday_sw"] == "E" | parse.game["gameday_sw"] == "P") {
+      
+      # grab number of innings played
+      HTML.Ninnings <- htmlParse(paste(URL.game, "inning/", sep = ""))
+      parse.Ninnings <- xpathSApply(HTML.Ninnings, "//a[@*]", xmlGetAttr, "href")
+      
+      # check to see if game exists data by checking innings > 1
+      if (length(grep("^inning_[0-9]", parse.Ninnings)) > 1) {
+        
+        # for each inning
+        for (inning in 1:length(grep("^inning_[0-9]", parse.Ninnings))) {
+          
+          # grab inning info
+          URL.inning <- paste(URL.game, "inning/", "inning_", inning,
+                              ".xml", sep = "")
+          XML.inning <- xmlInternalTreeParse(URL.inning)
+          parse.atbat <- xpathSApply(XML.inning, "//atbat[@*]")
+          parse.Npitches.atbat <- sapply(parse.atbat, function(x)
+            sum(names(xmlChildren(x)) == "pitch"))
+          
+          # check to see if atbat exists
+          if (length(parse.atbat) > 0) {
+            print(paste(parse.day, "inning =", inning))
+            
+            # parse attributes from pitch and atbat (ugh, ugly)
+            parse.pitch <- sapply(grab.pitch, function(x)
+              as.character(xpathSApply(XML.inning, "//pitch[@*]",
+                                       xmlGetAttr, x)))
+            parse.pitch <- if (class(parse.pitch) == "character") {
+              t(parse.pitch)
+            } else apply(parse.pitch, 2, as.character)
+            results.atbat <- t(sapply(parse.atbat, function(x)
+              xmlAttrs(x)[grab.atbat]))
+            results.atbat <- results.atbat[rep(seq(nrow(results.atbat)),
+                                               times = parse.Npitches.atbat),]
+            results.atbat <- if (class(results.atbat) == "character") {
+              t(results.atbat)
+            } else results.atbat
+            
+            # write results
+            write(t(cbind(year, month, day, inning, home, away,
+                          results.atbat, parse.pitch)), file = fileloc,
+                  ncol = length(c(grab.atbat, grab.pitch)) + length(meta),
+                  append = T, sep = ">")
+          }
+        }
+      }
+    }
+  }
+}
+
+```
+
+## XML Example
+
+We can access each of these branches individually to extract their information.
+
+For example, we can access the gameIDs branch and pull out IDs for each game that occurred that day.
+```{r,eval=F}
+grep("^gid_*", )
+```
+
+The end [product](http://www4.stat.ncsu.edu/~post/sports/umpire/MLBGetData.r) is that we can grab every pitch from the game. 
+```{r}
+parse.pitch[1,1:5]
+```
+
+## SelectorGadget (1)
+
+The **rvest** package works with the [SelectorGadget](http://selectorgadget.com/) tool to pick out parts of a webpage. How does this work?
+
+ > **Example:** 
+ 
+ We want to find the names of the teams who played in a particular basketball [game](http://espn.go.com/ncb/boxscore?gameId=400587912).
+ 
+1.) Start with a URL
+
+```{r} 
+url <- "http://espn.go.com/ncb/boxscore?gameId=400587912"
+```
+
+## SelectorGadget (2)
+
+2.) Select the desired page sections
+  
+```{r}
+css <- ".team-color-strip th"
+```
+
+3.) Use rvest functions to extract this item.
+```{r, eval=TRUE,echo=-3}
+box.score <- html(url)
+team.names <- box.score %>%
+    html_nodes(css=css) %>%
+    html_text
+team.names
+```
+That's it! If you are interested in understanding what the tags mean, check it out [here](http://www.w3schools.com/tags/).
+
+#Questions or comments??   
+Warning: The next example is very involved.
+
+
+## Basketball Example
+
+Suppose we want to get box scores for every basketball game in the country this year.
+
+We can split this goal into 3 main parts:
+
+1. Find a list of every team (stringr)  
+2. Make a list of each of their games (stringr) 
+3. Retrieve the box score from each game (rvest)
+
+## Step 1: Teams
+
+Luckily, there is an ESPN page with all the [teams](http://espn.go.com/mens-college-basketball/teams) in Division I basketball.
+```{r,warning=F,echo=-1}
+library(stringr)
+html <- readLines("http://espn.go.com/mens-college-basketball/teams")
+```
+
+From there, I found a substring of the html that shows up once for each team. ("bi")
+```{r}
+find.teams <- str_locate_all(html, pattern='"bi"')
+right.lines <- which(lapply(find.teams,length) > 0)
+```
+
+## Step 1: Teams
+
+Next, I created vectors for names and teamIDs by searching for substrings within these lines
+
+```{r,echo=c(-1,-2)}
+team.names <- c()
+team.id <- c()
+for (j in 1:length(right.lines))
+{
+  team.names[j] <- substring(html[[right.lines[j]]],find.teams[[
+                    right.lines[[j]]]][2]+2)
+  team.names[j] <- strsplit(team.names[j],"<")[[1]][1]
+  
+  team.id[j] <- strsplit(html[[right.lines[j]]],"id/")[[1]][2]
+  team.id[j] <- strsplit(team.id[j],"/")[[1]][1]
+}
+
+```
+
+## Step 1: Teams
+
+Finally, I combined them into a nice data frame.
+```{r,echo=F}
+team.names <- as.matrix(team.names,ncol=1)
+team.id <- apply(as.matrix(team.id,ncol=1),2,as.numeric)
+
+teams <- cbind(team.names,team.id)
+colnames(teams) <- c("School","teamID")
+head(teams)
+```
+These can be pulled to access a team webpage to use for later steps.
+```{r,width=60}
+base.url <- "http://espn.go.com/mens-college-basketball/team/_/id/"
+paste(base.url,teams[1,2],sep="")
+```
+
+## Step 2: Games
+
+I started with the [NC State](http://espn.go.com/mens-college-basketball/team/_/id/152/nc-state-wolfpack) page on ESPN.
+
+```{r}
+library(stringr)
+url <- "http://espn.go.com/mens-college-basketball/team/_/id/152/"
+
+```
+
+After some poking around, I found that the gameId's were located within line 389 of the source code.
+```{r,warning=FALSE}
+team.page <- readLines(url)
+team.page <- team.page[[389]]
+
+```
+
+## Step 2: Games
+
+Next, I looked for each instance of the string "gameId" within this line.
+```{r}
+location <- str_locate_all(team.page,"gameId")[[1]][,2]
+```
+
+Finally, I found substrings that gave me the numerical gameId's.
+```{r}
+game.id <- c()
+for (i in 1:length(location))
+  game.id[i] <- strsplit(
+                  str_sub(team.page, start=location[i]+2)
+                      ,'\"')[[1]][1]
+
+game.id <- as.numeric(game.id)
+
+```
+
+## Step 2: Games
+
+And here are the resulting gameId's: 
+```{r,echo=F} 
+options(width=65)
+game.id
+```
+
+We can now access their corresponding URL's by adding them to the generic base:
+```{r}
+paste("http://espn.go.com/ncb/boxscore?gameId=",game.id[1],sep="")
+```
+
+## Step 3: Box Scores
+
+To obtain the box scores from each [game](http://espn.go.com/ncb/boxscore?gameId=400587912), I had to get creative with the SelectorGadget tool.
+
+I wrote the piping code into a function **css2str** that inputs the url and CSS Selector and outputs the vector of strings.
+```{r,echo=T}
+css2str <- function(url,css)
+  {
+    page <- html(url)
+    item <- page %>% 
+      html_nodes(css) %>%
+      html_text
+  return(item)
+  }
+```
+
+
+## Step 3: Box Scores
+
+I started with the labels for the game stats.
+```{r,echo=1:3}
+ url <- "http://espn.go.com/ncb/boxscore?gameId=400587912"
+ css.headings <- "tbody+ thead .team-color-strip+ tr th+ th"
+ names <- css2str(url,css.headings)
+  names <- c("Name",names)
+  names
+```
+
+Next, I moved on to the actual players and their stats. 
+```{r,echo=1:4}
+css.start <- "tbody:nth-child(2) td"
+css.bench <- "tbody:nth-child(3) td"
+team1.start <- css2str(url,css.start)
+team1.start <- t(matrix(team1.start,nrow=14))
+colnames(team1.start) <- names
+```
+
+## Step 3: Box Scores
+
+```{r}
+team1.start[,1:7]
+```
+
+## Final Results
+From there, I did some other basketball-related transformations, repeated for team2, and ended up with a list of 2 data frames.
+
+```{r,echo=F}
+### Team 1 Bench Players
+team1.bench <- box.score %>%
+  html_nodes("tbody:nth-child(3) td") %>%
+  html_text()
+team1.bench <- t(matrix(team1.bench,nrow=14))
+
+team1.total <- box.score %>%
+  html_nodes("tbody:nth-child(5) .even td+ td") %>%
+  html_text
+team1.total <- c("Totals",200,team1.total)
+
+team1 <- rbind(team1.start, team1.bench, team1.total)
+colnames(team1) <- names
+rownames(team1) <- NULL
+
+## Reformatting the matrix
+shots1 <- t(matrix(unlist(strsplit(team1[,"FGM-A"],"-")),nrow=2))
+colnames(shots1) <- c("FGM","FGA")
+
+threes1 <- t(matrix(unlist(strsplit(team1[,"3PM-A"],"-")),nrow=2))
+colnames(threes1) <- c("TPM","TPA")
+
+free1 <- t(matrix(unlist(strsplit(team1[,"FTM-A"],"-")),nrow=2))
+colnames(free1) <- c("FTM","FTA")
+
+shots.split1 <- cbind(shots1, threes1, free1)
+##shots_split1 <- apply(shots_split1,2,as.numeric)
+
+### recombine into final data frame
+team1.final <- data.frame(cbind(team1[,1:2],shots.split1,team1[,-c(1:5)]))
+team1.final[,-1] <- apply(team1.final[,-1],2,as.numeric)
+
+poss1 <- team1.final$FGA + 0.475*team1.final$FTA - team1.final$OREB + team1.final$TO
+team1.final <- cbind(team1.final,poss1)
+colnames(team1.final)[ncol(team1.final)] <- "POSS"
+```
+
+```{r,width=50}
+team1.final[,1:11]
+```
+## Summary
+
+- Web scraping allows us to methodically collect data from multiple sources/pages
+- XML and stringr have great parsing abilities
+- rvest allows users to interactively choose their strings of interest
+
+# Thanks! Any Questions??
