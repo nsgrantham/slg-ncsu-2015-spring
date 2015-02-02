@@ -10,7 +10,7 @@ If you would like to give a talk on an available data below, please email `slg@s
 |Talk|Date|Topic|Presenter(s)|
 |----|----|-----|------------|
 |00|01/23/15|Introduction|Neal Grantham & Alyson Wilson|
-|01|01/30/15|Data Scraping|Michael Dickey|
+|01|01/30/15|Web Scraping in `R	`|Marschall Furman|
 |02|02/06/15|TBD|TBD|
 |03|02/13/15|TBD|TBD|
 |04|02/20/15|TBD|TBD|
