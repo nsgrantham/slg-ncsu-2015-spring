@@ -48,11 +48,13 @@ There are numerous guides online about how to do this. Here are several operatin
 - [Mac OS X](http://learn.andrewmunsell.com/learn/jekyll-by-example/installing-jekyll) (you don't need to bother with rdiscount or pygments)
 - [Windows](http://jekyll-windows.juthilo.com)
 
-After doing that. Now do the following:
+Do NOT continue until you have Jekyll installed! Check that this is the case by typing `jekyll` into your terminal. It should return the version number and its options.
+
+Now do the following:
 
 1. Download [Barry Clark's "Jekyll Now" repository](https://github.com/barryclark/jekyll-now) by choosing "Download ZIP" (right-hand side). Make sure to save it in a good place. I prefer `~/Documents`. Unzip it if necessary.
 2. Open your terminal and navigate to this directory (e.g. `cd ~/Documents/jekyll-now-master`)
-3. Before building the site, we must install a ruby gem (essentially like a package in `R`) called `jekyll-sitemap`. To do so, enter `gem install jekyll-sitemap` into your terminal.
+3. Before building the site, we must install a ruby gem (essentially like a package in `R`) called `jekyll-sitemap`. To do so, enter `sudo gem install jekyll-sitemap` into your terminal.
 4. Now we can build the website! Enter `jekyll serve`.  Hopefully you get some output that ends with "Server running ... press ctrl+c to stop"
 5. Now open your browser of choice and head to the url     `http://localhost:4000`
 6. If all goes well you will be staring at your website (nobody else can visit it online though, your machine is just hosting it locally).
