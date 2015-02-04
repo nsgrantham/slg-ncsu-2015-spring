@@ -45,10 +45,10 @@ Presented by [Neal Grantham](http://nsgrantham.github.io) on February 6, 2015.
 There are numerous guides online about how to do this. Here are several operating system specific guides to install Ruby and Jekyll:
 
 - [Ubuntu 14.04](http://sharadchhetri.com/2014/06/30/install-jekyll-on-ubuntu-14-04-lts/)
-- [Mac OS X](http://davidensinger.com/2013/03/installing-jekyll/)
+- [Mac OS X](http://learn.andrewmunsell.com/learn/jekyll-by-example/installing-jekyll) (you don't need to bother with rdiscount or pygments)
 - [Windows](http://jekyll-windows.juthilo.com)
 
-Now do the following:
+After doing that. Now do the following:
 
 1. Download [Barry Clark's "Jekyll Now" repository](https://github.com/barryclark/jekyll-now) by choosing "Download ZIP" (right-hand side). Make sure to save it in a good place. I prefer `~/Documents`. Unzip it if necessary.
 2. Open your terminal and navigate to this directory (e.g. `cd ~/Documents/jekyll-now-master`)
