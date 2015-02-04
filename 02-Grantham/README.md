@@ -50,7 +50,7 @@ There are numerous guides online about how to do this. Here are several operatin
 
 Now do the following:
 
-1. Download [Barry Clark's "Jekyll Now" repository](https://github.com/barryclark/jekyll-now) by choosing "Clone in Desktop" or "Download ZIP" (right-hand side). Make sure to save it in a good place. I prefer `~/Documents`. Unzip it if necessary.
+1. Download [Barry Clark's "Jekyll Now" repository](https://github.com/barryclark/jekyll-now) by choosing "Download ZIP" (right-hand side). Make sure to save it in a good place. I prefer `~/Documents`. Unzip it if necessary.
 2. Open your terminal and navigate to this directory (e.g. `cd ~/Documents/jekyll-now-master`)
 3. Before building the site, we must install a ruby gem (essentially like a package in `R`) called `jekyll-sitemap`. To do so, enter `gem install jekyll-sitemap` into your terminal.
 4. Now we can build the website! Enter `jekyll serve`.  Hopefully you get some output that ends with "Server running ... press ctrl+c to stop"
