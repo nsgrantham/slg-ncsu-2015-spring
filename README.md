@@ -23,7 +23,7 @@ If you would like to give a talk on an available date below, please either:
 |04|03/20/15|Shiny in RStudio|Justin Post|
 |05|03/27/15|Text Mining|Brad Turnbull|
 | |04/03/15|_Spring holiday_ ||
-|09|04/10/15|`R` Tips & Tricks|Adam Suarez|
-|10|04/17/15|TBD|TBD|
-|11|04/24/15|TBD|TBD|
+|06|04/10/15|`R` Tips & Tricks|Adam Suarez|
+|07|04/17/15|TBD|TBD|
+|08|04/24/15|TBD|TBD|
 | | |_Done for the semester_||
